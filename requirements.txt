@@ -8,3 +8,5 @@ elevenlabs
 google-generativeai
 langchain-google-genai
 sqlmodel
+pyaudio
+SpeechRecognition
