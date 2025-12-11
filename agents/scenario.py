@@ -1,5 +1,7 @@
 from core.state import PipelineState
 
+from langchain_core.messages import AIMessage, HumanMessage
+
 def generate_scenario_node(state: PipelineState):
     prompt = """
     You are the "Scenario Engine" for a high-fidelity 911 dispatcher training simulator. Your goal is to generate unique, realistic, and high-stress emergency scenarios.
@@ -43,6 +45,35 @@ You must output a single valid JSON object containing four distinct fields:
     }
 
 def generate_response_node(state: PipelineState):
-    # TODO: Implement Gemini response generation
-    print("DEBUG: Generating Response")
-    return {"current_text": "Help me! I'm trapped!"}
+    messages = state.get("messages", [])
+    
+    # If no messages, generate initial greeting (start of call)
+    if not messages:
+         response_text = "Help me! I'm trapped!"
+         return {
+             "current_text": response_text,
+             "messages": [AIMessage(content=response_text)]
+         }
+
+    # Use history and last input to generate response
+    # TODO: Implement actual LLM generation here using state["scenario"]["victim_persona"]
+    # For now, mock a conversation flow
+    
+    last_message = messages[-1]
+    last_content = last_message.content.lower() if hasattr(last_message, 'content') else ""
+
+    print(f"DEBUG: Generating Response based on input: '{last_content}'")
+    
+    if "address" in last_content:
+        response_text = "I... I don't know the number! It's the blue house on Oakwood Lane!"
+    elif "coming" in last_content:
+        response_text = "Please hurry! I hear him walking around upstairs!"
+    elif "calm" in last_content:
+        response_text = "I can't calm down! He's going to find me!"
+    else:
+        response_text = "Please, just send help!"
+
+    return {
+        "current_text": response_text,
+        "messages": [AIMessage(content=response_text)]
+    }
