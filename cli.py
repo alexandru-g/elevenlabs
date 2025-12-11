@@ -88,5 +88,54 @@ def demo(load_voice_id):
     click.echo("Final Graph State:")
     pprint.pprint(final_state)
 
+@cli.command()
+@click.argument('agent_name')
+def run_agent(agent_name):
+    """Runs a single agent by name with mock state."""
+    
+    # Mock State Setup
+    mock_state = {
+        "scenario": {
+            "description": "Mock Scenario",
+            "voice_name": "Maya (Babysitter)",
+            "voice_prompt": "Young female voice, American General accent, high pitch, soft and light timbre.",
+            "example_dialogue": "Shhh! You have to listen to me...",
+            "victim_persona": "You are Maya..."
+        },
+        "voice_definition": {"voice_id": "mock_voice_id"},
+        "current_text": "Help me! I'm trapped!",
+        "audio_history": [],
+        "final_audio": None,
+        "messages": []
+    }
+
+    # Import agents
+    from agents.scenario import generate_scenario_node
+    from agents.voice_design import voice_design_node
+    from agents.tts import tts_node
+    from agents.effects import audio_effects_node
+    
+    agents = {
+        "scenario": generate_scenario_node,
+        "voice_design": voice_design_node,
+        "tts": tts_node,
+        "effects": audio_effects_node
+    }
+    
+    if agent_name not in agents:
+        click.echo(f"Error: Agent '{agent_name}' not found. Available agents: {', '.join(agents.keys())}")
+        return
+
+    click.echo(f"Running agent: {agent_name}")
+    try:
+        if agent_name == "scenario":
+            mock_state["scenario"] = None
+
+        result = agents[agent_name](mock_state)
+        click.echo("Result:")
+        pprint.pprint(result)
+    except Exception as e:
+        click.echo(f"Error running agent: {e}")
+
 if __name__ == '__main__':
     cli()

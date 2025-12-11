@@ -1,6 +1,13 @@
+import os
+import json
+import google.generativeai as genai
+from dotenv import load_dotenv
 from core.state import PipelineState
-
 from langchain_core.messages import AIMessage, HumanMessage
+
+load_dotenv()
+
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 def generate_scenario_node(state: PipelineState):
     prompt = """
@@ -28,21 +35,34 @@ You must output a single valid JSON object containing four distinct fields:
 }
 """
 
-    # TODO: Implement Gemini generation
     if state.get("scenario"):
         print("DEBUG: Skipping Scenario Generation (already exists)")
         return {}
+
+    print("DEBUG: Generating Scenario with Gemini...")
+    model = genai.GenerativeModel("gemini-3.0-pro-preview")
+    try:
+        response = model.generate_content(prompt, generation_config={"response_mime_type": "application/json"})
+        scenario_data = json.loads(response.text)
         
-    print("DEBUG: Generating Scenario")
-    return {
-        "scenario": {
-            "description": "Mock Scenario",
-            "voice_name": "Maya (Babysitter)",
-            "voice_prompt": "Young female voice, American General accent, high pitch, soft and light timbre.",
-            "example_dialogue": "Shhh! You have to listen to me, someone just smashed the back door glass. I'm hiding in the master bedroom closet with the baby.",
-            "victim_persona": "You are Maya, a 17-year-old babysitter. You are currently hiding in the master bedroom closet. You heard the back door glass shatter and heavy footsteps downstairs. Stress Level: 10/10.\n\n**Behavioral Instructions:**\n- WHISPER ONLY. Do not speak at a normal volume. If the dispatcher asks you to speak up, refuse and whisper, 'He'll hear me!'\n- You are hyperventilating. Take pauses to catch your breath.\n- You do not know the exact numerical address, only that it is on 'Oakwood Lane, the blue house near the park.' You need the dispatcher to guide you to find a piece of mail or use GPS location.\n- If the user pauses for more than 5 seconds, ask frantically, 'Are they coming? I hear him on the stairs.'"
+        # Normalize keys if needed, but the prompt asks for specific keys. 
+        # Map them to the keys expected by pipeline/graph if they differ.
+        # Graph expects: 'voice_name', 'voice_prompt' (mapped from elevenlabs_voice_prompt), 'example_dialogue' (mapped from generated_voice_sample_text)
+        
+        normalized_scenario = {
+            "description": f"Generated Scenario: {scenario_data.get('voice_name')}",
+            "voice_name": scenario_data.get("voice_name"),
+            "voice_prompt": scenario_data.get("elevenlabs_voice_prompt"),
+            "example_dialogue": scenario_data.get("generated_voice_sample_text"),
+            "victim_persona": scenario_data.get("victim_persona")
         }
-    }
+        
+        print(f"DEBUG: Generated Scenario: {normalized_scenario['voice_name']}")
+        return {"scenario": normalized_scenario}
+        
+    except Exception as e:
+        print(f"ERROR: Failed to generate scenario with Gemini: {e}")
+        raise e
 
 def generate_response_node(state: PipelineState):
     messages = state.get("messages", [])
