@@ -27,7 +27,7 @@ import {
   detectAnswerReceived,
 } from '../components';
 import type { EssentialQuestion } from '../components';
-import { useAudioRecorder, useElevenLabs } from '../hooks';
+import { useAudioRecorder } from '../hooks';
 import type { TrainingScenario, ConversationMessage, ProtocolStepUI } from '../types';
 
 interface TrainingCallProps {
@@ -45,12 +45,6 @@ interface SessionData {
   protocolScore: number;
 }
 
-interface ExtendedScenario extends TrainingScenario {
-  voice_id?: string;
-  voice_stability?: number;
-  voice_similarity_boost?: number;
-  voice_style?: number;
-}
 
 const DEFAULT_PROTOCOL_STEPS = [
   'Identify emergency type',
@@ -61,81 +55,9 @@ const DEFAULT_PROTOCOL_STEPS = [
   'Maintain calm demeanor',
 ];
 
-function generateCallerResponse(
-  scenario: TrainingScenario,
-  messageIndex: number,
-  operatorMessage?: string
-): string {
-  void scenario.dialogue_patterns;
-  const responses: Record<string, string[]> = {
-    'Car Accident - Highway Collision': [
-      "Oh my god, please help! There's been a terrible accident. I can't find my phone... no wait, I have it. We're on the highway!",
-      "I think near exit 47? There's so much smoke and my passenger isn't moving! Please hurry!",
-      "I don't know! I'm scared to move. There's glass everywhere and the other car is completely smashed.",
-      "Yes, yes I can see them breathing now. But they're unconscious. There's blood on their forehead. Please, how long until help arrives?",
-      "Okay, okay I'm trying to stay calm. I can hear sirens now. Are those for us? Please tell them to hurry!",
-    ],
-    'Medical Emergency - Cardiac Arrest': [
-      "Hello? I need help. My chest hurts so bad. I can't breathe properly.",
-      "I'm at 4523 Oak Street. Apartment 2B. The door should be unlocked.",
-      "I take blood pressure medicine. And something for my heart. I can't remember the names right now.",
-      "It started maybe 20 minutes ago. Getting worse. My arm is tingling. Please, I'm alone here.",
-      "Yes, I'll try to stay on the line. Getting hard to stay awake.",
-    ],
-    'Home Intrusion - Active Threat': [
-      "Please help me. Someone broke into my house. I'm hiding in my closet upstairs.",
-      "I heard glass break downstairs. There's at least one person, maybe two. I heard voices.",
-      "1847 Maple Drive. Master bedroom closet. Please, I think they're coming upstairs.",
-      "No weapons that I know of. Please send someone quickly. My phone battery is at 12%.",
-      "They're in my room. I have to be quiet.",
-    ],
-    'Fire Emergency - Apartment Building': [
-      "Hello?! There's a fire in my building! I can't get out, the hallway is full of smoke!",
-      "I'm at 892 Pine Avenue, third floor, apartment 304. The alarm's been going off for five minutes!",
-      "I can hear people screaming in the hallway. My neighbor, she's elderly. I don't know if she got out!",
-      "I closed the door and put towels under it like they say. The smoke is still getting in though.",
-      "I'm at my window now. I can see the street. Please, how much longer? It's getting really hot in here.",
-    ],
-    'Emergency Childbirth': [
-      "Oh god, please help us! My wife is having the baby right now! We can't make it to the hospital!",
-      "We're at 567 Birch Lane. The contractions are like 30 seconds apart now!",
-      "She's 38 weeks! The doctor said it would be another week but... Honey, breathe!",
-      "I can see the head! What do I do?! I don't know what to do!",
-      "Okay, okay, I'm listening. Towels and blankets ready. She says she needs to push!",
-    ],
-    'Drug Overdose - Unresponsive Friend': [
-      "Oh god, please help! My roommate won't wake up. I think... I think he took something at the party. He's barely breathing!",
-      "We're in Westfield Dorm, room 312 on the third floor. His name is Marcus, he's 22.",
-      "I don't know exactly what he took. There was stuff at the party... pills maybe? His lips are turning blue!",
-      "There's a Narcan kit in the RA's office down the hall. Should I get it? I don't want to leave him!",
-      "Okay, I tilted his head back like you said. He's still breathing but it's really slow and shallow.",
-      "I think it's working! He's starting to move a little. Oh thank god. Is he going to be okay?",
-    ],
-  };
-
-  const scenarioResponses = responses[scenario.title] || responses['Car Accident - Highway Collision'];
-
-  if (operatorMessage) {
-    const lowerMessage = operatorMessage.toLowerCase();
-    if (messageIndex === 0) {
-      return scenarioResponses[0];
-    }
-    if (lowerMessage.includes('location') || lowerMessage.includes('where') || lowerMessage.includes('address')) {
-      return scenarioResponses[1];
-    }
-    if (lowerMessage.includes('injur') || lowerMessage.includes('hurt') || lowerMessage.includes('breathing')) {
-      return scenarioResponses[3];
-    }
-    if (lowerMessage.includes('help') || lowerMessage.includes('way') || lowerMessage.includes('dispatch')) {
-      return scenarioResponses[4];
-    }
-  }
-
-  return scenarioResponses[Math.min(messageIndex, scenarioResponses.length - 1)];
-}
 
 export function TrainingCall({ scenario, onEndCall }: TrainingCallProps) {
-  const extendedScenario = scenario as ExtendedScenario;
+
 
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [protocolSteps, setProtocolSteps] = useState<ProtocolStepUI[]>(() =>
@@ -148,7 +70,8 @@ export function TrainingCall({ scenario, onEndCall }: TrainingCallProps) {
   );
   const [inputValue, setInputValue] = useState('');
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [stressLevel, setStressLevel] = useState(80);
+  const [stressLevel] = useState(80);
+
   const [locationConfidence, setLocationConfidence] = useState(0);
   const [dispatchedServices, setDispatchedServices] = useState<Set<string>>(new Set());
   const [isCallerSpeaking, setIsCallerSpeaking] = useState(false);
@@ -161,10 +84,11 @@ export function TrainingCall({ scenario, onEndCall }: TrainingCallProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const responseTimesRef = useRef<number[]>([]);
   const lastOperatorTimeRef = useRef<number>(0);
-  const messageIndexRef = useRef(0);
-  const pendingResponseRef = useRef<string>('');
 
-  const { speak, isSpeaking, stopSpeaking, isConfigured } = useElevenLabs();
+  const [threadId] = useState(() => crypto.randomUUID());
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+
+  // const { speak, isSpeaking, stopSpeaking, isConfigured } = useElevenLabs();
   const [micError, setMicError] = useState<string | null>(null);
 
   const {
@@ -181,12 +105,20 @@ export function TrainingCall({ scenario, onEndCall }: TrainingCallProps) {
         setIsProcessing(true);
         setMicError(null);
         try {
-          const text = await transcribeAudio(blob);
-          if (text.trim()) {
-            setInputValue(text);
-          } else {
-            setMicError('No speech detected. Try speaking louder or check your microphone.');
-          }
+          // TODO: send blob to backend as current operator message, which returns the next victim response
+          const formData = new FormData();
+          formData.append('audio', blob);
+
+          const response = await fetch(`http://localhost:8000/api/chat/${threadId}`, {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!response.ok) throw new Error('API call failed');
+
+          const data = await response.json();
+          await handleBackendResponse(data);
+
         } catch (err) {
           const errorMsg = err instanceof Error ? err.message : 'Transcription failed';
           setMicError(errorMsg);
@@ -198,42 +130,33 @@ export function TrainingCall({ scenario, onEndCall }: TrainingCallProps) {
     },
   });
 
-  const transcribeAudio = async (blob: Blob): Promise<string> => {
-    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-    const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const handleBackendResponse = async (data: { text: string; audio: string }) => {
+    if (data.text) {
+      // Assume backend returns Caller's response (Victim)
+      // Add to messages
+      const callerResponse: ConversationMessage = {
+        id: `msg-${Date.now()}`,
+        speaker: 'caller',
+        message: data.text,
+        timestamp: elapsedTime + 1, // approximate
+        emotion: stressLevel > 60 ? 'panicked' : 'anxious',
+      };
+      setMessages((m) => [...m, callerResponse]);
 
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-      throw new Error('Supabase not configured');
+      checkProtocolCompletion(data.text, true);
+      setEssentialQuestions((prev) => detectAnswerReceived(data.text, prev));
     }
 
-    const mimeType = blob.type || 'audio/webm';
-    const extension = mimeType.includes('mp4') ? 'mp4' : 'webm';
-
-    const formData = new FormData();
-    formData.append('audio', blob, `recording.${extension}`);
-
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/elevenlabs-stt`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-      body: formData,
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      console.error('STT Error Response:', result);
-      if (result.error?.includes('API key')) {
-        throw new Error('ElevenLabs API key not configured. Contact admin.');
+    if (data.audio) {
+      try {
+        const audio = new Audio(`data:audio/mp3;base64,${data.audio}`);
+        setIsAudioPlaying(true);
+        audio.onended = () => setIsAudioPlaying(false);
+        await audio.play();
+      } catch (e) {
+        console.error("Audio playback error", e);
       }
-      if (result.details) {
-        throw new Error(`STT Error: ${result.details}`);
-      }
-      throw new Error(result.error || result.message || 'Speech recognition failed');
     }
-
-    return result.text || '';
   };
 
   useEffect(() => {
@@ -314,38 +237,30 @@ export function TrainingCall({ scenario, onEndCall }: TrainingCallProps) {
   }, [elapsedTime]);
 
   useEffect(() => {
-    const timeout = setTimeout(async () => {
-      const initialMessage = generateCallerResponse(scenario, 0);
-      const message: ConversationMessage = {
-        id: `msg-${Date.now()}`,
-        speaker: 'caller',
-        message: initialMessage,
-        timestamp: 0,
-        emotion: 'panicked',
-      };
-      setMessages([message]);
-      setIsCallerSpeaking(true);
-      messageIndexRef.current = 1;
+    // Start backend session
+    const startSession = async () => {
+      setIsProcessing(true);
+      try {
+        const response = await fetch(`http://localhost:8000/api/chat/${threadId}`, {
+          method: 'POST'
+        });
+        if (!response.ok) throw new Error('Failed to start session');
+        const data = await response.json();
 
-      checkProtocolCompletion(initialMessage, true);
-
-      if (audioEnabled && isConfigured) {
-        try {
-          await speak(initialMessage, {
-            voiceId: extendedScenario.voice_id,
-            stability: extendedScenario.voice_stability,
-            similarityBoost: extendedScenario.voice_similarity_boost,
-            style: extendedScenario.voice_style,
-          });
-        } catch {
-          console.log('TTS not available');
-        }
+        // Initial response from Victim
+        await handleBackendResponse(data);
+        setIsCallerSpeaking(false);
+      } catch (e) {
+        console.error("Backend error", e);
+      } finally {
+        setIsProcessing(false);
       }
-      setIsCallerSpeaking(false);
-    }, 1000);
+    };
 
-    return () => clearTimeout(timeout);
-  }, [scenario, audioEnabled, isConfigured, speak, extendedScenario, checkProtocolCompletion]);
+    // Delay slightly to allow UI to settle
+    const timber = setTimeout(startSession, 1000);
+    return () => clearTimeout(timber);
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -373,44 +288,28 @@ export function TrainingCall({ scenario, onEndCall }: TrainingCallProps) {
 
     setEssentialQuestions((prev) => detectQuestionStatus(messageText, prev));
 
-    pendingResponseRef.current = messageText;
+    // Send text to backend
+    setIsProcessing(true);
+    try {
+      const formData = new FormData();
+      formData.append('text', messageText);
 
-    setTimeout(async () => {
-      setIsCallerSpeaking(true);
+      const response = await fetch(`http://localhost:8000/api/chat/${threadId}`, {
+        method: 'POST',
+        body: formData
+      });
 
-      const callerText = generateCallerResponse(scenario, messageIndexRef.current, pendingResponseRef.current);
+      if (!response.ok) throw new Error("API failed");
+      const data = await response.json();
+      handleBackendResponse(data);
 
-      setTimeout(async () => {
-        const callerResponse: ConversationMessage = {
-          id: `msg-${Date.now()}`,
-          speaker: 'caller',
-          message: callerText,
-          timestamp: elapsedTime + 3,
-          emotion: stressLevel > 60 ? 'panicked' : 'anxious',
-        };
-        setMessages((m) => [...m, callerResponse]);
-        messageIndexRef.current += 1;
-        setStressLevel((s) => Math.max(30, s - 5));
+    } catch (e) {
+      console.error("Send message error", e);
+    } finally {
+      setIsProcessing(false);
+    }
 
-        checkProtocolCompletion(callerText, true);
-        setEssentialQuestions((prev) => detectAnswerReceived(callerText, prev));
-
-        if (audioEnabled && isConfigured) {
-          try {
-            await speak(callerText, {
-              voiceId: extendedScenario.voice_id,
-              stability: extendedScenario.voice_stability,
-              similarityBoost: extendedScenario.voice_similarity_boost,
-              style: extendedScenario.voice_style,
-            });
-          } catch {
-            console.log('TTS not available');
-          }
-        }
-        setIsCallerSpeaking(false);
-      }, 500);
-    }, 500);
-  }, [inputValue, elapsedTime, checkProtocolCompletion, scenario, stressLevel, audioEnabled, isConfigured, speak, extendedScenario]);
+  }, [inputValue, elapsedTime, checkProtocolCompletion, scenario, stressLevel]);
 
   const handleMicToggle = async () => {
     if (isRecording) {
@@ -437,7 +336,7 @@ export function TrainingCall({ scenario, onEndCall }: TrainingCallProps) {
   };
 
   const handleEndCall = () => {
-    stopSpeaking();
+    // stopSpeaking(); // Removed
     if (isRecording) {
       stopRecording();
     }
@@ -471,11 +370,11 @@ export function TrainingCall({ scenario, onEndCall }: TrainingCallProps) {
             <p className="text-sm font-medium text-text-primary">{scenario.persona_name}</p>
             <p className="text-xs text-text-tertiary font-mono">{formatTime(elapsedTime)}</p>
 
-            {(isCallerSpeaking || isSpeaking) && (
+            {(isCallerSpeaking || isAudioPlaying) && (
               <div className="mt-2 flex items-center justify-center">
                 <LiveWaveform
-                  audioLevel={isSpeaking ? 60 : 40}
-                  isActive={isCallerSpeaking || isSpeaking}
+                  audioLevel={isAudioPlaying ? 60 : 40}
+                  isActive={isCallerSpeaking || isAudioPlaying}
                   color="#F4A259"
                 />
               </div>
@@ -488,9 +387,8 @@ export function TrainingCall({ scenario, onEndCall }: TrainingCallProps) {
             <p className="text-xs text-text-tertiary">Audio</p>
             <button
               onClick={() => setAudioEnabled(!audioEnabled)}
-              className={`p-1 rounded transition-colors ${
-                audioEnabled ? 'bg-status-success/20 text-status-success' : 'bg-bg-hover text-text-tertiary'
-              }`}
+              className={`p-1 rounded transition-colors ${audioEnabled ? 'bg-status-success/20 text-status-success' : 'bg-bg-hover text-text-tertiary'
+                }`}
             >
               {audioEnabled ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
             </button>
@@ -499,7 +397,7 @@ export function TrainingCall({ scenario, onEndCall }: TrainingCallProps) {
           <div className="flex items-center gap-2">
             <Radio className="w-3 h-3 text-accent-blue" />
             <span className="text-xs text-text-secondary">
-              {isSpeaking ? 'Speaking' : isCallerSpeaking ? 'Processing' : 'Ready'}
+              {isAudioPlaying ? 'Speaking' : isCallerSpeaking ? 'Processing' : 'Ready'}
             </span>
           </div>
         </div>
@@ -577,14 +475,13 @@ export function TrainingCall({ scenario, onEndCall }: TrainingCallProps) {
           <div className="flex items-center gap-2 mb-2">
             <button
               onClick={handleMicToggle}
-              disabled={isProcessing || isSpeaking}
-              className={`p-2 rounded transition-all ${
-                isRecording
-                  ? 'bg-accent-red text-white animate-pulse'
-                  : isProcessing
+              disabled={isProcessing || isAudioPlaying}
+              className={`p-2 rounded transition-all ${isRecording
+                ? 'bg-accent-red text-white animate-pulse'
+                : isProcessing
                   ? 'bg-bg-tertiary text-text-tertiary'
                   : 'bg-bg-tertiary text-text-secondary hover:bg-bg-hover hover:text-text-primary'
-              }`}
+                }`}
             >
               {isProcessing ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -641,11 +538,10 @@ export function TrainingCall({ scenario, onEndCall }: TrainingCallProps) {
             <button
               onClick={() => handleDispatch('ambulance')}
               disabled={dispatchedServices.has('ambulance')}
-              className={`flex items-center gap-1.5 px-2 py-1.5 rounded transition-colors text-xs font-medium ${
-                dispatchedServices.has('ambulance')
-                  ? 'bg-status-success/20 text-status-success cursor-default'
-                  : 'bg-status-critical/20 text-status-critical hover:bg-status-critical/30'
-              }`}
+              className={`flex items-center gap-1.5 px-2 py-1.5 rounded transition-colors text-xs font-medium ${dispatchedServices.has('ambulance')
+                ? 'bg-status-success/20 text-status-success cursor-default'
+                : 'bg-status-critical/20 text-status-critical hover:bg-status-critical/30'
+                }`}
             >
               <Ambulance className="w-3 h-3" />
               {dispatchedServices.has('ambulance') ? 'Sent' : 'Ambulance'}
@@ -653,11 +549,10 @@ export function TrainingCall({ scenario, onEndCall }: TrainingCallProps) {
             <button
               onClick={() => handleDispatch('police')}
               disabled={dispatchedServices.has('police')}
-              className={`flex items-center gap-1.5 px-2 py-1.5 rounded transition-colors text-xs font-medium ${
-                dispatchedServices.has('police')
-                  ? 'bg-status-success/20 text-status-success cursor-default'
-                  : 'bg-accent-blue/20 text-accent-blue hover:bg-accent-blue/30'
-              }`}
+              className={`flex items-center gap-1.5 px-2 py-1.5 rounded transition-colors text-xs font-medium ${dispatchedServices.has('police')
+                ? 'bg-status-success/20 text-status-success cursor-default'
+                : 'bg-accent-blue/20 text-accent-blue hover:bg-accent-blue/30'
+                }`}
             >
               <Shield className="w-3 h-3" />
               {dispatchedServices.has('police') ? 'Sent' : 'Police'}
@@ -665,11 +560,10 @@ export function TrainingCall({ scenario, onEndCall }: TrainingCallProps) {
             <button
               onClick={() => handleDispatch('fire')}
               disabled={dispatchedServices.has('fire')}
-              className={`flex items-center gap-1.5 px-2 py-1.5 rounded transition-colors text-xs font-medium ${
-                dispatchedServices.has('fire')
-                  ? 'bg-status-success/20 text-status-success cursor-default'
-                  : 'bg-accent-amber/20 text-accent-amber hover:bg-accent-amber/30'
-              }`}
+              className={`flex items-center gap-1.5 px-2 py-1.5 rounded transition-colors text-xs font-medium ${dispatchedServices.has('fire')
+                ? 'bg-status-success/20 text-status-success cursor-default'
+                : 'bg-accent-amber/20 text-accent-amber hover:bg-accent-amber/30'
+                }`}
             >
               <Flame className="w-3 h-3" />
               {dispatchedServices.has('fire') ? 'Sent' : 'Fire'}

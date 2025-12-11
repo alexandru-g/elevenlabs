@@ -187,24 +187,19 @@ CREATE INDEX IF NOT EXISTS idx_coaching_feedback_session_id ON coaching_feedback
 -- Insert default training scenarios
 INSERT INTO training_scenarios (title, icon, description, difficulty, category, persona_name, persona_age, persona_voice, situation, key_info, dialogue_patterns, background_sounds, complications) VALUES
 (
-  'Car Accident - Highway Collision',
-  '🚗',
-  'Multi-vehicle crash on Highway 101. Caller is disoriented and passenger is unresponsive.',
-  3,
-  'traffic',
-  'Sarah M.',
-  34,
-  'female, panicked, breathing heavily',
-  'Multi-vehicle collision on Highway 101 near exit 47. Two vehicles involved with at least two victims.',
-  ARRAY['Highway 101', 'Exit 47', '2 vehicles', '2 victims', 'Passenger unresponsive'],
-  '[
-    "Initially disoriented and struggling to find phone",
-    "Provides vague location first - just highway name",
-    "Breaks down crying when discussing passenger condition",
-    "Becomes clearer as operator maintains calm demeanor"
-  ]'::jsonb,
-  ARRAY['traffic noise', 'sirens approaching', 'wind', 'other cars passing'],
-  ARRAY['Disoriented from impact', 'Difficulty providing exact location', 'Panic attacks', 'Passenger not responding']
+  'Random Emergency',
+  '�',
+  'Random Emergency',
+  5,
+  'random',
+  '',
+  0,
+  '',
+  '',
+  null,
+  null,
+  null,
+  null
 ),
 (
   'Medical Emergency - Cardiac Arrest',

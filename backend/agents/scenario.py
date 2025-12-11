@@ -121,10 +121,15 @@ def generate_response_node(state: PipelineState):
 
     try:
         response = model.generate_content(formatted_prompt, generation_config={"response_mime_type": "application/json"})
+
+        # pprint(response)
         
-        # response_obj = json.loads(response.text)
+        response_obj = json.loads(response.text)
         # response_text = response_obj["response"]
-        response_text = response.text
+        if (response_obj.get("spoken_response") is None):
+            response_text = response.text
+        else:
+            response_text = response_obj["spoken_response"]
         
         print(f"DEBUG: Generated Response: {response_text[:50]}...")
         

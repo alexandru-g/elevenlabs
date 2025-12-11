@@ -1,7 +1,7 @@
+import base64
 from core.state import PipelineState
 from dotenv import load_dotenv
 from elevenlabs.client import ElevenLabs
-from elevenlabs.play import play
 import os
 
 load_dotenv()
@@ -11,16 +11,17 @@ elevenlabs = ElevenLabs(
 )
 
 def tts_node(state: PipelineState):
-    audio = elevenlabs.text_to_dialogue.convert(
-        inputs=[
-            {
-                "text": state["current_text"],
-                "voice_id": state["voice_definition"]["voice_id"],
-            }
-        ]
-    )
     print("DEBUG: Generating TTS")
+    audio_generator = elevenlabs.text_to_speech.convert(
+        voice_id=state["voice_definition"]["voice_id"],
+        text=state["current_text"],
+        model_id="eleven_turbo_v2_5"
+    )
+    
+    audio_bytes = b"".join(audio_generator)
+    audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
 
-    play(audio)
-
-    return {"audio_history": state["audio_history"] + ["mock_audio.mp3"]}
+    return {
+        "final_audio": audio_base64,
+        "audio_history": state["audio_history"]
+    }

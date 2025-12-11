@@ -44,6 +44,25 @@ export function Dashboard({ onStartTraining, onViewSession }: DashboardProps) {
         setScenarios(scenariosResult.data);
       }
 
+      const randomScenario: TrainingScenario = {
+        id: '0',
+        title: `Random Scenario`,
+        description: 'A randomly generated training scenario for testing purposes.',
+        icon: '📞',
+        difficulty: 5,
+        category: '',
+        persona_name: '',
+        persona_age: 0,
+        persona_voice: '',
+        situation: '',
+        key_info: [],
+        dialogue_patterns: [],
+        background_sounds: [],
+        complications: [],
+        created_at: ''
+      };
+      setScenarios([randomScenario, ...scenariosResult.data]);
+
       if (sessionsResult.data) {
         const sessionsData = sessionsResult.data as Array<{
           id: string;

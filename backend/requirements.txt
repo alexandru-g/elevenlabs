@@ -10,3 +10,4 @@ langchain-google-genai
 sqlmodel
 pyaudio
 SpeechRecognition
+python-multipart
