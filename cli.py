@@ -40,14 +40,8 @@ def demo(load_voice_id):
         click.echo(f"Loaded scenario for Voice ID: {load_voice_id}")
     else:
         initial_state = {
-            "scenario": {
-                "description": "Mock Scenario",
-                "voice_name": "Maya",
-                "voice_prompt": "Young female voice, American General accent, high pitch, soft and light timbre.",
-                "example_dialogue": "",
-                "victim_persona": "You are Maya, a 17-year-old babysitter. You are currently hiding in the master bedroom closet. You heard the back door glass shatter and heavy footsteps downstairs. Stress Level: 10/10.\n\n**Behavioral Instructions:**\n- WHISPER ONLY. Do not speak at a normal volume. If the dispatcher asks you to speak up, refuse and whisper, 'He'll hear me!'\n- You are hyperventilating. Take pauses to catch your breath.\n- You do not know the exact numerical address, only that it is on 'Oakwood Lane, the blue house near the park.' You need the dispatcher to guide you to find a piece of mail or use GPS location.\n- If the user pauses for more than 5 seconds, ask frantically, 'Are they coming? I hear him on the stairs.'"
-            },
-            "voice_definition": {"voice_id": "1vv1HaZbEdPUqiY6W98r"},
+            "scenario": None,
+            "voice_definition": None,
             "current_text": None,
             "audio_history": [],
             "final_audio": None,
