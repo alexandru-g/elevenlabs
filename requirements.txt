@@ -1,0 +1,10 @@
+langchain
+langgraph
+click
+fastapi
+uvicorn
+python-dotenv
+elevenlabs
+google-generativeai
+langchain-google-genai
+sqlmodel
