@@ -27,13 +27,17 @@ You must output a single valid JSON object containing four distinct fields:
 """
 
     # TODO: Implement Gemini generation
+    if state.get("scenario"):
+        print("DEBUG: Skipping Scenario Generation (already exists)")
+        return {}
+        
     print("DEBUG: Generating Scenario")
     return {
         "scenario": {
             "description": "Mock Scenario",
             "voice_name": "Maya (Babysitter)",
             "voice_prompt": "Young female voice, American General accent, high pitch, soft and light timbre.",
-            "example_dialogue": "Shhh! You have to listen to me, someone just smashed the back door glass. I'm hiding in the master bedroom closet with the baby, but I can hear his boots crunching on the floorboards downstairs. He's moving towards the stairs... oh god, please send someone, I don't want to die.",
+            "example_dialogue": "Shhh! You have to listen to me, someone just smashed the back door glass. I'm hiding in the master bedroom closet with the baby.",
             "victim_persona": "You are Maya, a 17-year-old babysitter. You are currently hiding in the master bedroom closet. You heard the back door glass shatter and heavy footsteps downstairs. Stress Level: 10/10.\n\n**Behavioral Instructions:**\n- WHISPER ONLY. Do not speak at a normal volume. If the dispatcher asks you to speak up, refuse and whisper, 'He'll hear me!'\n- You are hyperventilating. Take pauses to catch your breath.\n- You do not know the exact numerical address, only that it is on 'Oakwood Lane, the blue house near the park.' You need the dispatcher to guide you to find a piece of mail or use GPS location.\n- If the user pauses for more than 5 seconds, ask frantically, 'Are they coming? I hear him on the stairs.'"
         }
     }
