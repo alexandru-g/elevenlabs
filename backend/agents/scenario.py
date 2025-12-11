@@ -126,10 +126,13 @@ def generate_response_node(state: PipelineState):
         
         response_obj = json.loads(response.text)
         # response_text = response_obj["response"]
-        if (response_obj.get("spoken_response") is None):
+        try:
+            if (response_obj.get("spoken_response") is None):
+                response_text = response.text
+            else:
+                response_text = response_obj["spoken_response"]
+        except Exception as e:
             response_text = response.text
-        else:
-            response_text = response_obj["spoken_response"]
         
         print(f"DEBUG: Generated Response: {response_text[:50]}...")
         

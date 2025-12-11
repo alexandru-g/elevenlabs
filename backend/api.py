@@ -97,7 +97,8 @@ async def chat_endpoint(thread_id: str, audio: UploadFile = File(None), text: Op
             logger.info(f"Starting new session for thread {thread_id}")
 
             # load_voice_id = "1vv1HaZbEdPUqiY6W98r"
-            load_voice_id = "TBb2DozaZQ0ev7kEXL9a"
+            # load_voice_id = "TBb2DozaZQ0ev7kEXL9a"
+            load_voice_id = None
 
             if load_voice_id:
                 scenario_record = get_scenario(load_voice_id)
