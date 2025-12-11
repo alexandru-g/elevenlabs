@@ -111,12 +111,14 @@ def run_agent(agent_name):
 
     # Import agents
     from agents.scenario import generate_scenario_node
+    from agents.scenario import generate_response_node
     from agents.voice_design import voice_design_node
     from agents.tts import tts_node
     from agents.effects import audio_effects_node
     
     agents = {
         "scenario": generate_scenario_node,
+        "response": generate_response_node,
         "voice_design": voice_design_node,
         "tts": tts_node,
         "effects": audio_effects_node
@@ -130,7 +132,35 @@ def run_agent(agent_name):
     try:
         if agent_name == "scenario":
             mock_state["scenario"] = None
-
+        elif agent_name == "response":
+            mock_state["scenario"] = {'description': 'Generated Scenario: Madison',
+              'example_dialogue': 'So, I was totally planning on just '
+                                  'finishing my chem homework tonight before '
+                                  'the movie started. I usually go to the '
+                                  "library, but it's closed for renovations, "
+                                  'so I decided to just stay in and make some '
+                                  "popcorn instead. It's honestly been a "
+                                  'really long week at school and I just need '
+                                  'a break.',
+              'victim_persona': 'You are Madison, a 19-year-old babysitter. '
+                                'You are currently hiding in the master '
+                                'bedroom closet at 2408 Oakwood Drive. You '
+                                'heard the back sliding glass door shatter and '
+                                'heavy footsteps downstairs. The parents are '
+                                'out at dinner. The children, Liam (4) and '
+                                'Emma (6), are asleep in the next room. Your '
+                                'stress level is 9/10. You are terrified. You '
+                                'are speaking in a hushed whisper to avoid '
+                                'being heard. Use short, panicked sentences. '
+                                'Do not agree to leave the closet. If the '
+                                'dispatcher asks about the intruders, say you '
+                                'hear two male voices arguing. You are afraid '
+                                'they are coming up the stairs.',
+              'voice_name': 'Madison',
+              'voice_prompt': 'Young female voice, American Midwest accent, '
+                              'medium-high pitch, clear resonance with a '
+                              'slight vocal fry.'}
+            
         result = agents[agent_name](mock_state)
         click.echo("Result:")
         pprint.pprint(result)
