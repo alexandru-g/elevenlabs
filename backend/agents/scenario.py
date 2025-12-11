@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from core.state import PipelineState
 from langchain_core.messages import AIMessage, HumanMessage
 
+from pprint import pprint
+
 load_dotenv()
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
@@ -114,11 +116,14 @@ def generate_response_node(state: PipelineState):
     formatted_prompt = formatted_prompt.replace("{{chat_history}}", json.dumps(chat_history))
 
     print("DEBUG: Generating Response with Gemini...")
-    model = genai.GenerativeModel("gemini-3-pro-preview")
+    # model = genai.GenerativeModel("gemini-3-pro-preview")
+    model = genai.GenerativeModel("gemini-2.5-flash")
 
     try:
         response = model.generate_content(formatted_prompt, generation_config={"response_mime_type": "application/json"})
         
+        # response_obj = json.loads(response.text)
+        # response_text = response_obj["response"]
         response_text = response.text
         
         print(f"DEBUG: Generated Response: {response_text[:50]}...")

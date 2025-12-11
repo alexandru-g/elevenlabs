@@ -1,0 +1,188 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #1A1D21;
+  --bg-secondary: #232629;
+  --bg-tertiary: #2C2F33;
+  --bg-hover: #35383C;
+
+  --accent-blue: #5B9FE3;
+  --accent-cyan: #4ECDC4;
+  --accent-purple: #8B7FE8;
+  --accent-amber: #F4A259;
+  --accent-red: #E76F51;
+
+  --status-active: #4ECDC4;
+  --status-warning: #F4A259;
+  --status-critical: #E76F51;
+  --status-success: #6BCF7F;
+
+  --text-primary: #E8EAED;
+  --text-secondary: #9AA0A6;
+  --text-tertiary: #6C7278;
+
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-hover);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #444750;
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-4 py-2 bg-accent-blue text-white rounded font-medium transition-all duration-200;
+    @apply hover:bg-opacity-90 hover:shadow-glow active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 bg-bg-tertiary text-text-primary rounded font-medium transition-all duration-200;
+    @apply hover:bg-bg-hover active:scale-[0.98] border border-white/10;
+  }
+
+  .btn-danger {
+    @apply px-4 py-2 bg-accent-red text-white rounded font-medium transition-all duration-200;
+    @apply hover:bg-opacity-90 active:scale-[0.98];
+  }
+
+  .btn-success {
+    @apply px-4 py-2 bg-status-success text-bg-primary rounded font-medium transition-all duration-200;
+    @apply hover:bg-opacity-90 active:scale-[0.98];
+  }
+
+  .card {
+    @apply bg-bg-secondary rounded-md border border-white/5 shadow-card;
+  }
+
+  .card-elevated {
+    @apply bg-bg-tertiary rounded-md border border-white/10 shadow-elevated;
+  }
+
+  .input-field {
+    @apply w-full px-3 py-2 bg-bg-tertiary text-text-primary rounded border border-white/10;
+    @apply focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/30;
+    @apply placeholder:text-text-tertiary transition-all duration-200;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium;
+  }
+
+  .badge-active {
+    @apply bg-status-active/20 text-status-active;
+  }
+
+  .badge-warning {
+    @apply bg-status-warning/20 text-status-warning;
+  }
+
+  .badge-critical {
+    @apply bg-status-critical/20 text-status-critical;
+  }
+
+  .badge-success {
+    @apply bg-status-success/20 text-status-success;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+.pulse-ring {
+  animation: pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes live-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.live-pulse {
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+@keyframes waveform-bar {
+  0%, 100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.waveform-bar {
+  animation: waveform-bar 0.5s ease-in-out infinite;
+}
+
+.waveform-bar:nth-child(1) { animation-delay: 0s; }
+.waveform-bar:nth-child(2) { animation-delay: 0.1s; }
+.waveform-bar:nth-child(3) { animation-delay: 0.2s; }
+.waveform-bar:nth-child(4) { animation-delay: 0.15s; }
+.waveform-bar:nth-child(5) { animation-delay: 0.25s; }
+.waveform-bar:nth-child(6) { animation-delay: 0.1s; }
+.waveform-bar:nth-child(7) { animation-delay: 0.05s; }
+
+.backdrop-blur-modal {
+  backdrop-filter: blur(12px);
+}
