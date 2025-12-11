@@ -116,8 +116,8 @@ def generate_response_node(state: PipelineState):
     formatted_prompt = formatted_prompt.replace("{{chat_history}}", json.dumps(chat_history))
 
     print("DEBUG: Generating Response with Gemini...")
-    # model = genai.GenerativeModel("gemini-3-pro-preview")
-    model = genai.GenerativeModel("gemini-2.5-flash")
+    model = genai.GenerativeModel("gemini-3-pro-preview")
+    # model = genai.GenerativeModel("gemini-2.5-flash")
 
     try:
         response = model.generate_content(formatted_prompt, generation_config={"response_mime_type": "application/json"})
@@ -127,10 +127,12 @@ def generate_response_node(state: PipelineState):
         response_obj = json.loads(response.text)
         # response_text = response_obj["response"]
         try:
-            if (response_obj.get("spoken_response") is None):
-                response_text = response.text
-            else:
+            if (response_obj.get("spoken_response") is not None):
                 response_text = response_obj["spoken_response"]
+            elif (response_obj.get("response") is not None):
+                response_text = response_obj["response"]
+            else:
+                response_text = response.text
         except Exception as e:
             response_text = response.text
         
